@@ -1,0 +1,149 @@
+generator client { provider = "prisma-client-js" }
+datasource db { provider = "postgresql"; url = env("DATABASE_URL") }
+
+model User {
+  id                   String   @id @default(cuid())
+  email                String?  @unique
+  passwordHash         String?
+  provider             String   @default("credentials")
+  handle               String   @unique
+  displayName          String?
+  nickname             String?
+  bio                  String?
+  gameId               String?
+  level                Int?
+  inviteCode           String?
+  avatarUrl            String?
+  frameKey             String?
+  effectKey            String?
+  bgKind               String?
+  bgValue              String?
+  statusKey            String?
+  countryCode          String?
+  accountOrder         Int      @default(autoincrement())
+  favoriteShipName     String?
+  favoriteShipCode     String?
+  favoriteShipImage    String?
+  gallery              GalleryImage[]
+  musicEnabled         Boolean  @default(false)
+  musicTrackId         String?
+  musicEmbedUrl        String?
+  socials              SocialLink[]
+  roleAdmin            Boolean  @default(false)
+  roleStaff            Boolean  @default(false)
+  roleLegend           Boolean  @default(false)
+  roleHero             Boolean  @default(false)
+  showClan             Boolean  @default(true)
+  clanId               String?
+  clanTag              String?
+  handleChangedAt      DateTime?
+  displayNameChangedAt DateTime?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  likesReceived        Like[]   @relation("LikesOnTarget")
+  likesGiven           Like[]   @relation("LikesByUser", fields: [id], references: [userId])
+  @@index([handle])
+}
+
+model SocialLink {
+  id        String @id @default(cuid())
+  provider  String
+  label     String
+  url       String
+  userId    String
+  user      User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model GalleryImage {
+  id        String @id @default(cuid())
+  url       String
+  userId    String
+  user      User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Clan {
+  id          String   @id @default(cuid())
+  tag         String
+  name        String?
+  flagUrl     String?
+  emblemUrl   String?
+  bio         String?
+  ownerUserId String
+  owner       User     @relation(fields: [ownerUserId], references: [id])
+  visibility  String   @default("public")
+  members     ClanMember[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  @@index([tag])
+}
+
+model ClanMember {
+  id        String  @id @default(cuid())
+  clanId    String
+  userId    String
+  role      String  @default("Member")
+  joinedAt  DateTime @default(now())
+  clan      Clan    @relation(fields: [clanId], references: [id], onDelete: Cascade)
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([clanId, userId])
+}
+
+model Like {
+  id            String  @id @default(cuid())
+  targetUserId  String
+  userId        String
+  createdAt     DateTime @default(now())
+  target        User    @relation("LikesOnTarget", fields: [targetUserId], references: [id], onDelete: Cascade)
+  user          User    @relation("LikesByUser", fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([targetUserId, userId])
+  @@index([targetUserId])
+}
+
+model GiftCode {
+  id        String  @id @default(cuid())
+  code      String  @unique
+  reward    String
+  maxUses   Int     @default(1)
+  uses      Int     @default(0)
+  expiresAt DateTime?
+  createdAt DateTime @default(now())
+}
+
+model StatusRef {
+  id        String @id @default(cuid())
+  key       String @unique
+  label     String
+  description String?
+  previewUrl  String?
+  createdAt DateTime @default(now())
+}
+model FrameRef {
+  id        String @id @default(cuid())
+  key       String @unique
+  label     String
+  description String?
+  previewUrl  String?
+  createdAt DateTime @default(now())
+}
+model EffectRef {
+  id        String @id @default(cuid())
+  key       String @unique
+  label     String
+  description String?
+  previewUrl  String?
+  createdAt DateTime @default(now())
+}
+
+model Report {
+  id            String  @id @default(cuid())
+  type          String
+  targetUserId  String
+  imageUrl      String?
+  imagePublicId String?
+  reason        String
+  createdBy     String?
+  status        String  @default("pending")
+  moderatorNote String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}

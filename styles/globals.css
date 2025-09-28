@@ -1,0 +1,23 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root { color-scheme: dark; }
+html, body { height: 100%; }
+body { @apply bg-[#031728] text-white antialiased; }
+
+.bg-ocean {
+  background: radial-gradient(60% 40% at 50% 0%, rgba(91, 201, 255, 0.16), transparent 60%),
+              linear-gradient(180deg, #07243f 0%, #0a3c67 35%, #0d5da0 100%);
+}
+.bg-sunset {
+  background: radial-gradient(60% 40% at 50% 0%, rgba(255, 201, 91, 0.16), transparent 60%),
+              linear-gradient(180deg, #2a1835 0%, #6a2f51 40%, #d77b50 100%);
+}
+.bg-abyss {
+  background: radial-gradient(60% 40% at 50% 0%, rgba(91, 255, 232, 0.12), transparent 60%),
+              linear-gradient(180deg, #081018 0%, #0b1f31 40%, #0c2f4d 100%);
+}
+.scrim {
+  background: linear-gradient(180deg, rgba(0,0,0,.35), rgba(0,0,0,.15) 30%, rgba(0,0,0,.35));
+}
