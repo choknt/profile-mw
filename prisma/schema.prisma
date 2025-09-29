@@ -1,149 +1,159 @@
-generator client { provider = "prisma-client-js" }
-datasource db { provider = "postgresql"; url = env("DATABASE_URL") }
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============== MODELS ==============
 
 model User {
-  id                   String   @id @default(cuid())
-  email                String?  @unique
-  passwordHash         String?
-  provider             String   @default("credentials")
-  handle               String   @unique
-  displayName          String?
-  nickname             String?
-  bio                  String?
-  gameId               String?
-  level                Int?
-  inviteCode           String?
-  avatarUrl            String?
-  frameKey             String?
-  effectKey            String?
-  bgKind               String?
-  bgValue              String?
-  statusKey            String?
-  countryCode          String?
-  accountOrder         Int      @default(autoincrement())
-  favoriteShipName     String?
-  favoriteShipCode     String?
-  favoriteShipImage    String?
-  gallery              GalleryImage[]
-  musicEnabled         Boolean  @default(false)
-  musicTrackId         String?
-  musicEmbedUrl        String?
-  socials              SocialLink[]
-  roleAdmin            Boolean  @default(false)
-  roleStaff            Boolean  @default(false)
-  roleLegend           Boolean  @default(false)
-  roleHero             Boolean  @default(false)
-  showClan             Boolean  @default(true)
-  clanId               String?
-  clanTag              String?
-  handleChangedAt      DateTime?
-  displayNameChangedAt DateTime?
-  createdAt            DateTime @default(now())
-  updatedAt            DateTime @updatedAt
-  likesReceived        Like[]   @relation("LikesOnTarget")
-  likesGiven           Like[]   @relation("LikesByUser", fields: [id], references: [userId])
+  id                    String   @id @default(cuid())
+  email                 String?  @unique
+  passwordHash          String?
+  provider              String   @default("credentials")
+  handle                String   @unique
+  displayName           String?
+  nickname              String?
+  bio                   String?
+  gameId                String?
+  level                 Int?
+  inviteCode            String?
+  avatarUrl             String?
+  frameKey              String?
+  effectKey             String?
+  bgKind                String?     // "color" | "image" | "preset"
+  bgValue               String?
+  statusKey             String?
+  countryCode           String?
+  accountOrder          Int       @default(autoincrement())
+  favoriteShipName      String?
+  favoriteShipCode      String?
+  favoriteShipImage     String?
+
+  // Media & Socials
+  gallery               GalleryImage[]
+  socials               SocialLink[]
+
+  // Music
+  musicEnabled          Boolean   @default(false)
+  musicTrackId          String?
+  musicEmbedUrl         String?
+
+  // Roles/Badges
+  roleAdmin             Boolean   @default(false)
+  roleStaff             Boolean   @default(false)
+  roleLegend            Boolean   @default(false)
+  roleHero              Boolean   @default(false)
+
+  // Clan
+  showClan              Boolean   @default(true)
+  clanId                String?
+  clanTag               String?
+  clan                  Clan?     @relation(fields: [clanId], references: [id])
+
+  // Rename cooldown
+  handleChangedAt       DateTime?
+  displayNameChangedAt  DateTime?
+
+  // Meta
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  // Likes
+  likesReceived         Like[]    @relation("LikesOnTarget")
+  likesGiven            Like[]    @relation("LikesByUser")
+
   @@index([handle])
 }
 
 model SocialLink {
-  id        String @id @default(cuid())
-  provider  String
-  label     String
-  url       String
-  userId    String
-  user      User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id          String   @id @default(cuid())
+  platform    String   // tiktok/x/discord/facebook/instagram/bsky/...
+  url         String
+  displayName String?  // ชื่อสั้นที่เอาไปโชว์ เช่น "chok"
+  user        User     @relation(fields: [userId], references: [id])
+  userId      String
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
 }
 
 model GalleryImage {
-  id        String @id @default(cuid())
+  id        String   @id @default(cuid())
+  publicId  String?  // Cloudinary public_id
   url       String
+  width     Int?
+  height    Int?
+  user      User     @relation(fields: [userId], references: [id])
   userId    String
-  user      User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-}
+  createdAt DateTime @default(now())
 
-model Clan {
-  id          String   @id @default(cuid())
-  tag         String
-  name        String?
-  flagUrl     String?
-  emblemUrl   String?
-  bio         String?
-  ownerUserId String
-  owner       User     @relation(fields: [ownerUserId], references: [id])
-  visibility  String   @default("public")
-  members     ClanMember[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  @@index([tag])
-}
-
-model ClanMember {
-  id        String  @id @default(cuid())
-  clanId    String
-  userId    String
-  role      String  @default("Member")
-  joinedAt  DateTime @default(now())
-  clan      Clan    @relation(fields: [clanId], references: [id], onDelete: Cascade)
-  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  @@unique([clanId, userId])
+  @@index([userId])
 }
 
 model Like {
-  id            String  @id @default(cuid())
-  targetUserId  String
+  id            String   @id @default(cuid())
+  user          User     @relation("LikesByUser", fields: [userId], references: [id])
   userId        String
+  target        User     @relation("LikesOnTarget", fields: [targetUserId], references: [id])
+  targetUserId  String
   createdAt     DateTime @default(now())
-  target        User    @relation("LikesOnTarget", fields: [targetUserId], references: [id], onDelete: Cascade)
-  user          User    @relation("LikesByUser", fields: [userId], references: [id], onDelete: Cascade)
-  @@unique([targetUserId, userId])
+
+  @@unique([userId, targetUserId])
   @@index([targetUserId])
 }
 
 model GiftCode {
+  code       String   @id              // e.g. "FRAME_XYZ", "STATUS_STARTER"
+  reward     String                      // e.g. "frame:neon_wave", "status:founder"
+  expiresAt  DateTime?
+  maxUses    Int       @default(1)
+  uses       Int       @default(0)
+  createdBy  String?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+}
+
+model RefStatus {
+  key       String  @id    // e.g. "founder", "event2025"
+  label     String
+  active    Boolean @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model RefFrame {
+  key       String  @id    // e.g. "neon_wave"
+  label     String
+  rarity    String?        // e.g. "common/rare/legendary"
+  active    Boolean @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model RefEffect {
+  key       String  @id
+  label     String
+  rarity    String?
+  active    Boolean @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Clan {
   id        String  @id @default(cuid())
-  code      String  @unique
-  reward    String
-  maxUses   Int     @default(1)
-  uses      Int     @default(0)
-  expiresAt DateTime?
+  name      String
+  tag       String   @unique     // ตัวย่อ เช่น [THX]
+  flagEmoji String?               // ธงแคลน
+  bio       String?
+  ownerId   String?               // อาจอ้างถึง User.id (ถ้าต้อง)
   createdAt DateTime @default(now())
-}
+  updatedAt DateTime @updatedAt
 
-model StatusRef {
-  id        String @id @default(cuid())
-  key       String @unique
-  label     String
-  description String?
-  previewUrl  String?
-  createdAt DateTime @default(now())
-}
-model FrameRef {
-  id        String @id @default(cuid())
-  key       String @unique
-  label     String
-  description String?
-  previewUrl  String?
-  createdAt DateTime @default(now())
-}
-model EffectRef {
-  id        String @id @default(cuid())
-  key       String @unique
-  label     String
-  description String?
-  previewUrl  String?
-  createdAt DateTime @default(now())
-}
-
-model Report {
-  id            String  @id @default(cuid())
-  type          String
-  targetUserId  String
-  imageUrl      String?
-  imagePublicId String?
-  reason        String
-  createdBy     String?
-  status        String  @default("pending")
-  moderatorNote String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  members   User[]
 }
