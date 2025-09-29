@@ -1,3 +1,6 @@
+  cat > prisma/schema.prisma <<'PRISMA'
+// prisma/schema.prisma
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -6,6 +9,8 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
+// ============== MODELS ==============
 
 model User {
   id                    String   @id @default(cuid())
@@ -22,7 +27,7 @@ model User {
   avatarUrl             String?
   frameKey              String?
   effectKey             String?
-  bgKind                String?
+  bgKind                String?     // "color" | "image" | "preset"
   bgValue               String?
   statusKey             String?
   countryCode           String?
@@ -30,48 +35,65 @@ model User {
   favoriteShipName      String?
   favoriteShipCode      String?
   favoriteShipImage     String?
+
+  // Media & Socials
   gallery               GalleryImage[]
   socials               SocialLink[]
+
+  // Music
   musicEnabled          Boolean   @default(false)
   musicTrackId          String?
   musicEmbedUrl         String?
+
+  // Roles/Badges
   roleAdmin             Boolean   @default(false)
   roleStaff             Boolean   @default(false)
   roleLegend            Boolean   @default(false)
   roleHero              Boolean   @default(false)
+
+  // Clan
   showClan              Boolean   @default(true)
   clanId                String?
   clanTag               String?
   clan                  Clan?     @relation(fields: [clanId], references: [id])
+
+  // Rename cooldown
   handleChangedAt       DateTime?
   displayNameChangedAt  DateTime?
+
+  // Meta
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
+
+  // Likes
   likesReceived         Like[]    @relation("LikesOnTarget")
   likesGiven            Like[]    @relation("LikesByUser")
+
   @@index([handle])
 }
 
 model SocialLink {
   id          String   @id @default(cuid())
-  platform    String
+  platform    String   // tiktok/x/discord/facebook/instagram/bsky/...
   url         String
-  displayName String?
+  displayName String?  // ชื่อสั้นที่เอาไปโชว์ เช่น "chok"
   user        User     @relation(fields: [userId], references: [id])
   userId      String
   createdAt   DateTime @default(now())
+
   @@index([userId])
 }
 
 model GalleryImage {
   id        String   @id @default(cuid())
-  publicId  String?
+  publicId  String?  // Cloudinary public_id
   url       String
   width     Int?
   height    Int?
   user      User     @relation(fields: [userId], references: [id])
   userId    String
   createdAt DateTime @default(now())
+
   @@index([userId])
 }
 
@@ -82,13 +104,14 @@ model Like {
   target        User     @relation("LikesOnTarget", fields: [targetUserId], references: [id])
   targetUserId  String
   createdAt     DateTime @default(now())
+
   @@unique([userId, targetUserId])
   @@index([targetUserId])
 }
 
 model GiftCode {
-  code       String   @id
-  reward     String
+  code       String   @id              // e.g. "FRAME_XYZ", "STATUS_STARTER"
+  reward     String                     // e.g. "frame:neon_wave", "status:founder"
   expiresAt  DateTime?
   maxUses    Int       @default(1)
   uses       Int       @default(0)
@@ -98,7 +121,7 @@ model GiftCode {
 }
 
 model RefStatus {
-  key       String  @id
+  key       String  @id    // e.g. "founder", "event2025"
   label     String
   active    Boolean @default(true)
   createdAt DateTime @default(now())
@@ -106,9 +129,9 @@ model RefStatus {
 }
 
 model RefFrame {
-  key       String  @id
+  key       String  @id    // e.g. "neon_wave"
   label     String
-  rarity    String?
+  rarity    String?        // e.g. "common/rare/legendary"
   active    Boolean @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -126,40 +149,13 @@ model RefEffect {
 model Clan {
   id        String  @id @default(cuid())
   name      String
-  tag       String   @unique
-  flagEmoji String?
+  tag       String   @unique     // ตัวย่อ เช่น [THX]
+  flagEmoji String?               // ธงแคลน
   bio       String?
-  ownerId   String?
+  ownerId   String?               // อาจอ้างถึง User.id (ถ้าต้อง)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
   members   User[]
 }
-model RefFrame {
-  key       String  @id
-  label     String
-  rarity    String?
-  active    Boolean @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model RefEffect {
-  key       String  @id
-  label     String
-  rarity    String?
-  active    Boolean @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model Clan {
-  id        String  @id @default(cuid())
-  name      String
-  tag       String   @unique
-  flagEmoji String?
-  bio       String?
-  ownerId   String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  members   User[]
-}
+PRISMA
