@@ -1,29 +1,42 @@
-import Credentials from "next-auth/providers/credentials";
-import type { NextAuthOptions } from "next-auth";
-import { compare } from "bcryptjs";
-import { prisma } from "@/lib/prisma";
+import { getServerSession } from "next-auth";
+import { redirect } from "next/navigation";
+import { prisma } from "./prisma";
+import { authOptions } from "@/app/api/auth/[...nextauth]/options";
 
-export const authOptions: NextAuthOptions = {
-  providers: [
-    Credentials({
-      name: "Email & Password",
-      credentials: { email:{label:"Email", type:"text"}, password:{label:"Password", type:"password"} },
-      async authorize(credentials){
-        if(!credentials?.email || !credentials?.password) return null;
-        const user = await prisma.user.findUnique({ where: { email: credentials.email } });
-        if(!user?.passwordHash) return null;
-        const ok = await compare(credentials.password, user.passwordHash);
-        if(!ok) return null;
-        return { id: user.id, email: user.email!, name: user.displayName || user.handle, handle: user.handle,
-                 roles: { admin:user.roleAdmin, staff:user.roleStaff, legend:user.roleLegend, hero:user.roleHero } } as any;
-      }
-    })
-  ],
-  pages: { signIn: "/create" },
-  session: { strategy: "jwt" },
-  callbacks: {
-    async jwt({ token, user }){ if(user){ token.uid=(user as any).id; token.handle=(user as any).handle; token.roles=(user as any).roles; } return token; },
-    async session({ session, token }){ (session as any).uid=token.uid; (session as any).handle=token.handle; (session as any).roles=token.roles; return session; }
-  },
-  secret: process.env.NEXTAUTH_SECRET
-};
+/**
+ * ใช้ในหน้า admin เท่านั้น
+ * - ต้องล็อกอิน
+ * - user.roleAdmin = true
+ * คืนค่า user (จาก Prisma) ถ้าผ่าน
+ * ถ้าไม่ผ่านจะ redirect ออก
+ */
+export async function requireAdmin() {
+  const session = await getServerSession(authOptions);
+  if (!session || !session.user?.email) {
+    redirect("/login");
+  }
+
+  const me = await prisma.user.findUnique({
+    where: { email: session.user.email },
+    select: {
+      id: true,
+      email: true,
+      roleAdmin: true,
+      handle: true,
+      displayName: true,
+    },
+  });
+
+  if (!me || !me.roleAdmin) {
+    redirect("/");
+  }
+
+  return me;
+}
+
+/** ถ้าต้องการแค่บังคับให้ล็อกอิน (ไม่ตรวจ admin) */
+export async function requireSignedIn() {
+  const session = await getServerSession(authOptions);
+  if (!session) redirect("/login");
+  return session;
+}
