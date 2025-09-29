@@ -33,7 +33,7 @@ export default function EditForm({ handle }:{ handle:string }){
     setMe(d);
     setDisplayName(d.displayName||""); setBio(d.bio||""); setCountry(d.countryCode||"TH"); setStatus(d.statusKey||"");
     setMusicId(d.musicTrackId); setSocialUrls((d.socials||[]).map((s:any)=>s.url)); setFavoriteShip(d.favoriteShipName?{name:d.favoriteShipName, code:d.favoriteShipCode, imageUrl:d.favoriteShipImage}:null);
-    const known = BG_PRESETS.find(p => (d.bgKind==="color" and d.bgValue===p.key));
+    const known = BG_PRESETS.find((p) => d.bgKind === "color" && d.bgValue === p.key);
     if(known){ setBgKind("preset"); setBgValue(known.key); }
     else if(d.bgKind==="image"){ setBgKind("image"); setBgValue(d.bgValue||""); }
     else { setBgKind("color"); setBgValue(d.bgValue || "#0b5fa2"); }
