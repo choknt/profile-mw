@@ -13,7 +13,9 @@ export async function POST(req: Request){
   if(!me) return new Response("Not found", { status: 404 });
   const g = await prisma.giftCode.findUnique({ where: { code: String(code).trim() } });
   if(!g) return new Response("Invalid code", { status: 404 });
-  if(g.expiresAt and g.expiresAt.getTime() < Date.now()) return new Response("Code expired", { status: 400 });
+  if (g.expiresAt && g.expiresAt.getTime() < Date.now()) {
+  return new Response("Code expired", { status: 400 });
+}
   if(g.uses >= g.maxUses) return new Response("Code limit reached", { status: 400 });
 
   const [type, value] = g.reward.split(":");
