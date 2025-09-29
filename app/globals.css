@@ -1,0 +1,28 @@
+/* app/globals.css */
+
+/* ถ้าใช้ Tailwind ให้ปลดคอมเมนต์ 3 บรรทัดด้านล่าง */
+// @tailwind base;
+// @tailwind components;
+// @tailwind utilities;
+
+:root {
+  --bg: #061a2b;
+  --fg: #e7f6ff;
+}
+
+html, body {
+  padding: 0;
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+* {
+  box-sizing: border-box;
+}
