@@ -134,3 +134,32 @@ model Clan {
   updatedAt DateTime @updatedAt
   members   User[]
 }
+model RefFrame {
+  key       String  @id
+  label     String
+  rarity    String?
+  active    Boolean @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model RefEffect {
+  key       String  @id
+  label     String
+  rarity    String?
+  active    Boolean @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Clan {
+  id        String  @id @default(cuid())
+  name      String
+  tag       String   @unique
+  flagEmoji String?
+  bio       String?
+  ownerId   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  members   User[]
+}
