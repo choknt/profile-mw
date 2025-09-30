@@ -3,20 +3,32 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 export async function POST(req: Request) {
-  const { type, targetHandle, reason, image } = await req.json();
-  if (!type || !targetHandle || !reason) return new Response("Missing fields", { status: 400 });
-
   const session = await getServerSession(authOptions);
-  const createdBy = session ? (session as any).uid : undefined;
+  if (!session) return new Response("Sign in", { status: 401 });
 
-  const target = await prisma.user.findUnique({ where: { handle: String(targetHandle).toLowerCase() } });
+  const body = await req.json().catch(() => ({}));
+  const handle = String(body?.handle || "").toLowerCase().trim();
+  const reason = String(body?.reason || "").trim();
+  const image = body?.image as { url?: string; publicId?: string } | undefined;
+
+  if (!handle) return new Response("Missing handle", { status: 400 });
+  if (!reason) return new Response("Missing reason", { status: 400 });
+
+  const target = await prisma.user.findUnique({ where: { handle } });
   if (!target) return new Response("Target not found", { status: 404 });
+
+  const createdBy = (session as any).uid as string;
 
   await prisma.report.create({
     data: {
-      type, targetUserId: target.id, reason,
-      imageUrl: image?.url, imagePublicId: image?.publicId, createdBy
-    }
+      targetUserId: target.id,
+      targetHandle: handle,
+      reason,
+      imageUrl: image?.url,
+      imagePublicId: image?.publicId,
+      createdBy,
+    },
   });
-  return new Response(null, { status: 201 });
+
+  return new Response(null, { status: 204 });
 }
