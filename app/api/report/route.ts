@@ -9,8 +9,6 @@ export async function POST(req: Request) {
   const body = await req.json().catch(() => ({}));
   const handle = String(body?.handle || "").toLowerCase().trim();
   const reason = String(body?.reason || "").trim();
-  const image = body?.image as { url?: string; publicId?: string } | undefined;
-
   if (!handle) return new Response("Missing handle", { status: 400 });
   if (!reason) return new Response("Missing reason", { status: 400 });
 
@@ -24,9 +22,8 @@ export async function POST(req: Request) {
       targetUserId: target.id,
       targetHandle: handle,
       reason,
-      imageUrl: image?.url,
-      imagePublicId: image?.publicId,
       createdBy,
+      // status ให้ใช้ค่า default จาก schema (เช่น "pending")
     },
   });
 
