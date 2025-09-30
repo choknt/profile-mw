@@ -2,6 +2,7 @@ import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { prisma } from "./prisma";
 import { authOptions } from "@/app/api/auth/[...nextauth]/options";
+export { authOptions } from "@/app/api/auth/[...nextauth]/options";
 
 /**
  * ใช้ในหน้า admin เท่านั้น
