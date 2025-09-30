@@ -7,151 +7,180 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+/* ===================== User ===================== */
 model User {
-  id                    String   @id @default(cuid())
-  email                 String?  @unique
-  passwordHash          String?
-  provider              String   @default("credentials")
-  handle                String   @unique
-  displayName           String?
-  nickname              String?
-  bio                   String?
-  gameId                String?
-  level                 Int?
-  inviteCode            String?
-  avatarUrl             String?
-  frameKey              String?
-  effectKey             String?
-  bgKind                String?
-  bgValue               String?
-  statusKey             String?
-  countryCode           String?
-  accountOrder          Int       @default(autoincrement())
-  favoriteShipName      String?
-  favoriteShipCode      String?
-  favoriteShipImage     String?
-  gallery               GalleryImage[]
-  socials               SocialLink[]
-  musicEnabled          Boolean   @default(false)
-  musicTrackId          String?
-  musicEmbedUrl         String?
-  roleAdmin             Boolean   @default(false)
-  roleStaff             Boolean   @default(false)
-  roleLegend            Boolean   @default(false)
-  roleHero              Boolean   @default(false)
-  showClan              Boolean   @default(true)
-  clanId                String?
-  clanTag               String?
-  clan                  Clan?     @relation(fields: [clanId], references: [id])
-  handleChangedAt       DateTime?
-  displayNameChangedAt  DateTime?
-  createdAt             DateTime  @default(now())
-  updatedAt             DateTime  @updatedAt
-  likesReceived         Like[]    @relation("LikesOnTarget")
-  likesGiven            Like[]    @relation("LikesByUser")
-  reportsMade           Report[]  @relation("ReportsByUser")
-  reportsOnMe           Report[]  @relation("ReportsOnTarget")
+  id                   String   @id @default(cuid())
+  email                String?  @unique
+  passwordHash         String?  @map("passwordhash")
+  provider             String   @default("credentials")
+  handle               String   @unique
+  displayName          String?  @map("displayname")
+  nickname             String?
+  bio                  String?
+  gameId               String?  @map("gameid")
+  level                Int?
+  inviteCode           String?  @map("invitecode")
+  avatarUrl            String?  @map("avatarurl")
+  frameKey             String?  @map("framekey")
+  effectKey            String?  @map("effectkey")
+  bgKind               String?  @map("bgkind")
+  bgValue              String?  @map("bgvalue")
+  statusKey            String?  @map("statuskey")
+  countryCode          String?  @map("countrycode")
+  accountOrder         Int      @default(autoincrement()) @map("accountorder")
+  favoriteShipName     String?  @map("favoriteshipname")
+  favoriteShipCode     String?  @map("favoriteshipcode")
+  favoriteShipImage    String?  @map("favoriteshipimage")
+
+  // relations
+  gallery              GalleryImage[]
+  socials              SocialLink[]
+  likesReceived        Like[]   @relation("LikesOnTarget")
+  likesGiven           Like[]   @relation("LikesByUser")
+  reportsMade          Report[] @relation("ReportsByUser")
+  reportsOnMe          Report[] @relation("ReportsOnTarget")
+
+  musicEnabled         Boolean  @default(false) @map("musicenabled")
+  musicTrackId         String?  @map("musictrackid")
+  musicEmbedUrl        String?  @map("musicembedurl")
+
+  roleAdmin            Boolean  @default(false) @map("roleadmin")
+  roleStaff            Boolean  @default(false) @map("rolestaff")
+  roleLegend           Boolean  @default(false) @map("rolelegend")
+  roleHero             Boolean  @default(false) @map("rolehero")
+
+  showClan             Boolean  @default(true)  @map("showclan")
+  clanId               String?  @map("clanid")
+  clanTag              String?  @map("clantag")
+  clan                 Clan?    @relation(fields: [clanId], references: [id])
+
+  handleChangedAt      DateTime? @map("handlechangedat")
+  displayNameChangedAt DateTime? @map("displaynamechangedat")
+
+  createdAt            DateTime @default(now()) @map("createdat")
+  updatedAt            DateTime @updatedAt      @map("updatedat")
 
   @@index([handle])
 }
 
+/* ===================== SocialLink ===================== */
 model SocialLink {
   id          String   @id @default(cuid())
   platform    String
   url         String
-  displayName String?
+  displayName String?  @map("displayname")
+
   user        User     @relation(fields: [userId], references: [id])
-  userId      String
-  createdAt   DateTime @default(now())
+  userId      String   @map("userid")
+
+  createdAt   DateTime @default(now()) @map("createdat")
 
   @@index([userId])
 }
 
+/* ===================== GalleryImage ===================== */
 model GalleryImage {
   id        String   @id @default(cuid())
-  publicId  String?
+  publicId  String?  @map("publicid")
   url       String
   width     Int?
   height    Int?
+
   user      User     @relation(fields: [userId], references: [id])
-  userId    String
-  createdAt DateTime @default(now())
+  userId    String   @map("userid")
+
+  createdAt DateTime @default(now()) @map("createdat")
 
   @@index([userId])
 }
 
+/* ===================== Like ===================== */
 model Like {
   id            String   @id @default(cuid())
-  user          User     @relation("LikesByUser", fields: [userId], references: [id])
-  userId        String
-  target        User     @relation("LikesOnTarget", fields: [targetUserId], references: [id])
-  targetUserId  String
-  createdAt     DateTime @default(now())
+
+  user          User     @relation("LikesByUser",   fields: [userId],        references: [id])
+  userId        String   @map("userid")
+
+  target        User     @relation("LikesOnTarget", fields: [targetUserId],  references: [id])
+  targetUserId  String   @map("targetuserid")
+
+  createdAt     DateTime @default(now()) @map("createdat")
 
   @@unique([userId, targetUserId])
   @@index([targetUserId])
 }
 
+/* ===================== GiftCode ===================== */
 model GiftCode {
   code       String   @id
   reward     String
-  expiresAt  DateTime?
-  maxUses    Int       @default(1)
+  expiresAt  DateTime? @map("expiresat")
+  maxUses    Int       @default(1) @map("maxuses")
   uses       Int       @default(0)
-  createdBy  String?
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
+  createdBy  String?   @map("createdby")
+
+  createdAt  DateTime  @default(now()) @map("createdat")
+  updatedAt  DateTime  @updatedAt      @map("updatedat")
 }
 
+/* ===================== Ref tables ===================== */
 model RefStatus {
-  key       String  @id
+  key       String   @id
   label     String
-  active    Boolean @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("createdat")
+  updatedAt DateTime @updatedAt      @map("updatedat")
 }
 
 model RefFrame {
-  key       String  @id
+  key       String   @id
   label     String
   rarity    String?
-  active    Boolean @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("createdat")
+  updatedAt DateTime @updatedAt      @map("updatedat")
 }
 
 model RefEffect {
-  key       String  @id
+  key       String   @id
   label     String
   rarity    String?
-  active    Boolean @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("createdat")
+  updatedAt DateTime @updatedAt      @map("updatedat")
 }
 
+/* ===================== Clan ===================== */
 model Clan {
   id        String   @id @default(cuid())
   name      String
   tag       String   @unique
-  flagEmoji String?
+  flagEmoji String?  @map("flagemoji")
   bio       String?
-  ownerId   String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  ownerId   String?  @map("ownerid")
+
+  createdAt DateTime @default(now()) @map("createdat")
+  updatedAt DateTime @updatedAt      @map("updatedat")
+
   members   User[]
 }
 
+/* ===================== Report ===================== */
 model Report {
   id           String   @id @default(cuid())
-  reporter     User?    @relation("ReportsByUser", fields: [reporterId], references: [id])
-  reporterId   String?
+
+  reporter     User?    @relation("ReportsByUser",  fields: [reporterId],   references: [id])
+  reporterId   String?  @map("reporterid")
+
   target       User?    @relation("ReportsOnTarget", fields: [targetUserId], references: [id])
-  targetUserId String?
-  targetHandle String?
+  targetUserId String?  @map("targetuserid")
+
+  targetHandle String?  @map("targethandle")
   reason       String?
   status       String   @default("pending")
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+
+  createdAt    DateTime @default(now()) @map("createdat")
+  updatedAt    DateTime @updatedAt      @map("updatedat")
 
   @@index([status, createdAt])
   @@index([targetUserId])
