@@ -1,43 +1,49 @@
-import { getServerSession } from "next-auth";
-import { redirect } from "next/navigation";
-import { prisma } from "./prisma";
-import { authOptions } from "@/app/api/auth/[...nextauth]/options";
-export { authOptions } from "@/app/api/auth/[...nextauth]/options";
+import type { NextAuthOptions } from "next-auth";
+import Credentials from "next-auth/providers/credentials";
+import { prisma } from "@/lib/prisma";
+import bcrypt from "bcryptjs";
 
-/**
- * ใช้ในหน้า admin เท่านั้น
- * - ต้องล็อกอิน
- * - user.roleAdmin = true
- * คืนค่า user (จาก Prisma) ถ้าผ่าน
- * ถ้าไม่ผ่านจะ redirect ออก
- */
-export async function requireAdmin() {
-  const session = await getServerSession(authOptions);
-  if (!session || !session.user?.email) {
-    redirect("/login");
-  }
+export const authOptions: NextAuthOptions = {
+  session: { strategy: "jwt" },
+  providers: [
+    Credentials({
+      name: "Credentials",
+      credentials: {
+        email: { label: "Email", type: "text" },
+        password: { label: "Password", type: "password" },
+      },
+      async authorize(credentials) {
+        const email = credentials?.email?.toLowerCase().trim();
+        const password = credentials?.password || "";
+        if (!email || !password) return null;
 
-  const me = await prisma.user.findUnique({
-    where: { email: session.user.email },
-    select: {
-      id: true,
-      email: true,
-      roleAdmin: true,
-      handle: true,
-      displayName: true,
+        const user = await prisma.user.findUnique({ where: { email } });
+        if (!user || !user.passwordHash) return null;
+
+        const ok = await bcrypt.compare(password, user.passwordHash);
+        if (!ok) return null;
+
+        return {
+          id: user.id,
+          email: user.email ?? undefined,
+          name: user.displayName || user.handle,
+        };
+      },
+    }),
+  ],
+  pages: { signIn: "/login" },
+  callbacks: {
+    // ให้ token เก็บ uid (ไม่จำเป็นมาก แต่เผื่อโค้ดเก่าอ้าง .uid)
+    async jwt({ token, user }) {
+      if (user) token.uid = (user as any).id;
+      return token;
     },
-  });
-
-  if (!me || !me.roleAdmin) {
-    redirect("/");
-  }
-
-  return me;
-}
-
-/** ถ้าต้องการแค่บังคับให้ล็อกอิน (ไม่ตรวจ admin) */
-export async function requireSignedIn() {
-  const session = await getServerSession(authOptions);
-  if (!session) redirect("/login");
-  return session;
-}
+    // ให้ session.user.id ใช้งานได้แน่นอน
+    async session({ session, token }) {
+      if (token?.sub) (session.user as any).id = token.sub;
+      // เผื่อโค้ดบางที่ยังเรียก session.uid
+      if (token?.uid) (session as any).uid = token.uid;
+      return session;
+    },
+  },
+};
