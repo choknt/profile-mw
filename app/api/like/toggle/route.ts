@@ -14,7 +14,6 @@ export async function POST(req: Request) {
   if (!target) return new Response("Not found", { status: 404 });
   if (target.id === meId) return new Response("Cannot like yourself", { status: 400 });
 
-  // ✅ ใช้ชื่อ composite key ให้ถูกต้อง
   const composite = { userId_targetUserId: { userId: meId, targetUserId: target.id } };
 
   const exists = await prisma.like.findUnique({ where: composite }).catch(() => null);
