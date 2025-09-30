@@ -1,4 +1,3 @@
-// app/api/admin/grant/cosmetic/route.ts
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/guards";
 
