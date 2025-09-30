@@ -1,62 +1,41 @@
-export const runtime = "nodejs";
-
 import { prisma } from "@/lib/prisma";
 import { hash } from "bcryptjs";
 
-export async function POST(req: Request) {
+export async function POST(req: Request){
   try {
-    // ป้องกัน JSON พัง/อ่าน body ไม่ได้
-    let body: any;
-    try {
-      body = await req.json();
-    } catch {
-      return new Response("Invalid JSON body", { status: 400 });
-    }
+    const body = await req.json().catch(() => ({}));
+    const { gameId, handle, level, email, password } = body as any;
 
-    const rawEmail = String(body?.email || "").trim().toLowerCase();
-    const rawHandle = String(body?.handle || "").trim().toLowerCase();
-    const password = String(body?.password || "");
-    const gameId = body?.gameId ? String(body.gameId).trim() : null;
-    const level = body?.level ? Number(body.level) : 1;
-
-    if (!rawHandle || !rawEmail || !password) {
+    if (!handle || !email || !password) {
       return new Response("Missing fields", { status: 400 });
     }
 
-    // ตรวจ ENV สำคัญก่อน (ช่วยจับ 500 แบบง่ายๆ)
-    if (!process.env.DATABASE_URL) {
-      console.error("DATABASE_URL is missing");
-      return new Response("Server misconfigured (DB URL)", { status: 500 });
-    }
+    const normHandle = String(handle).toLowerCase().trim();
+    const normEmail  = String(email).toLowerCase().trim();
+    const lvl = Number(level || 1);
 
-    // ตรวจซ้ำ email/handle
     const exist = await prisma.user.findFirst({
-      where: { OR: [{ email: rawEmail }, { handle: rawHandle }] },
-      select: { id: true }
+      where: { OR: [{ email: normEmail }, { handle: normHandle }] }
     });
-    if (exist) {
-      return new Response("Email or handle already exists", { status: 409 });
-    }
-
-    const passwordHash = await hash(password, 10);
+    if (exist) return new Response("Email or handle already exists", { status: 409 });
 
     const u = await prisma.user.create({
       data: {
-        email: rawEmail,
-        passwordHash,
+        email: normEmail,
+        passwordHash: await hash(password, 10),
         provider: "credentials",
-        handle: rawHandle,
-        displayName: body?.handle || rawHandle,
-        gameId,
-        level: Number.isFinite(level) && level > 0 ? level : 1
+        handle: normHandle,
+        displayName: handle,
+        gameId: gameId ? String(gameId) : null,
+        level: Number.isFinite(lvl) ? lvl : 1,
       },
       select: { id: true }
     });
 
     return Response.json({ ok: true, id: u.id });
-  } catch (err: any) {
-    // Log แบบปลอดภัย
-    console.error("SIGNUP ERROR:", err?.message || err);
-    return new Response("Internal Server Error", { status: 500 });
+  } catch (e:any) {
+    // 👇 ให้เห็น error จริงใน Vercel Logs
+    console.error("SIGNUP ERROR:", e?.message || e, e?.stack);
+    return new Response(`SIGNUP ERROR: ${e?.message || "Unknown error"}`, { status: 500 });
   }
 }
