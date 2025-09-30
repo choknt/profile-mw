@@ -9,19 +9,20 @@ export async function POST(req: Request) {
   const { handle } = await req.json();
   if (!handle) return new Response("Missing handle", { status: 400 });
 
-  const meId = (session as any).uid;
-  const target = await prisma.user.findUnique({ where: { handle: handle.toLowerCase() } });
+  const meId = (session.user as any)?.id; // ✅ ใช้ session.user.id
+  const target = await prisma.user.findUnique({
+    where: { handle: handle.toLowerCase() },
+  });
   if (!target) return new Response("Not found", { status: 404 });
   if (target.id === meId) return new Response("Cannot like yourself", { status: 400 });
 
-  const composite = { userId_targetUserId: { userId: meId, targetUserId: target.id } };
+  const where = { userId_targetUserId: { userId: meId, targetUserId: target.id } };
 
-  const exists = await prisma.like.findUnique({ where: composite }).catch(() => null);
-
+  const exists = await prisma.like.findUnique({ where }).catch(() => null);
   if (exists) {
-    await prisma.like.delete({ where: composite });
+    await prisma.like.delete({ where });
   } else {
-    await prisma.like.create({ data: { userId: meId, targetUserId: target.id } });
+    await prisma.like.create({ data: { targetUserId: target.id, userId: meId } });
   }
 
   const count = await prisma.like.count({ where: { targetUserId: target.id } });
