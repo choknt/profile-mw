@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { requireAdmin } from "@/lib/auth";
+import { requireAdmin } from "@/lib/guards";
 
 export default async function RefsPage() {
   await requireAdmin();
@@ -11,42 +11,41 @@ export default async function RefsPage() {
   ]);
 
   return (
-    <main className="mx-auto max-w-5xl p-6">
-      <h1 className="mb-6 text-2xl font-bold">Reference Catalog</h1>
+    <main className="mx-auto max-w-5xl p-6 space-y-8">
+      <section>
+        <h2 className="text-xl font-semibold mb-2">Statuses</h2>
+        <ul className="space-y-2">
+          {statuses.map(s => (
+            <li key={s.key} className="rounded bg-white/5 px-3 py-2">
+              <div className="font-medium">{s.label}</div>
+              <div className="text-xs text-white/60">key: {s.key}</div>
+            </li>
+          ))}
+        </ul>
+      </section>
 
-      <section className="grid gap-6 md:grid-cols-3">
-        <div>
-          <h2 className="mb-2 font-semibold">Statuses</h2>
-          <ul className="space-y-1 text-sm text-white/80">
-            {statuses.map((s) => (
-              <li key={s.key}>
-                <span className="font-medium">{s.key}</span> — {s.label}
-              </li>
-            ))}
-          </ul>
-        </div>
+      <section>
+        <h2 className="text-xl font-semibold mb-2">Frames</h2>
+        <ul className="space-y-2">
+          {frames.map(f => (
+            <li key={f.key} className="rounded bg-white/5 px-3 py-2">
+              <div className="font-medium">{f.label}</div>
+              <div className="text-xs text-white/60">key: {f.key} {f.rarity ? `· ${f.rarity}` : ""}</div>
+            </li>
+          ))}
+        </ul>
+      </section>
 
-        <div>
-          <h2 className="mb-2 font-semibold">Frames</h2>
-          <ul className="space-y-1 text-sm text-white/80">
-            {frames.map((f) => (
-              <li key={f.key}>
-                <span className="font-medium">{f.key}</span> — {f.label}
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        <div>
-          <h2 className="mb-2 font-semibold">Effects</h2>
-          <ul className="space-y-1 text-sm text-white/80">
-            {effects.map((e) => (
-              <li key={e.key}>
-                <span className="font-medium">{e.key}</span> — {e.label}
-              </li>
-            ))}
-          </ul>
-        </div>
+      <section>
+        <h2 className="text-xl font-semibold mb-2">Effects</h2>
+        <ul className="space-y-2">
+          {effects.map(e => (
+            <li key={e.key} className="rounded bg-white/5 px-3 py-2">
+              <div className="font-medium">{e.label}</div>
+              <div className="text-xs text-white/60">key: {e.key} {e.rarity ? `· ${e.rarity}` : ""}</div>
+            </li>
+          ))}
+        </ul>
       </section>
     </main>
   );
