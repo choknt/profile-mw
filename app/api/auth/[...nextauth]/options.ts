@@ -9,7 +9,7 @@ export const authOptions: NextAuthOptions = {
     Credentials({
       name: "Credentials",
       credentials: {
-        email: { label: "Email", type: "text" },
+        email:    { label: "Email", type: "text" },
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
@@ -24,8 +24,8 @@ export const authOptions: NextAuthOptions = {
         if (!ok) return null;
 
         return {
-          id: user.id,
-          email: user.email!,
+          id:   user.id,
+          email: user.email ?? undefined,
           name: user.displayName || user.handle,
         };
       },
@@ -35,8 +35,14 @@ export const authOptions: NextAuthOptions = {
     signIn: "/login",
   },
   callbacks: {
+    async jwt({ token, user }) {
+      // ตอนล็อกอินครั้งแรกจะมี user -> ยัด uid ให้ token
+      if (user?.id) token.uid = user.id;
+      return token;
+    },
     async session({ session, token }) {
-      if (token?.sub) (session.user as any).id = token.sub;
+      // ส่ง uid เข้าไปใน session ให้ส่วนอื่นเรียกใช้ได้
+      if (token?.uid) (session.user as any).id = token.uid as string;
       return session;
     },
   },
