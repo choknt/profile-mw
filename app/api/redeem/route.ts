@@ -27,8 +27,7 @@ export async function POST(req: Request){
 
   await prisma.$transaction(async(tx)=>{
     await tx.user.update({ where: { id: me.id }, data });
-    await tx.giftCode.update({ where: { id: g.id }, data: { uses: g.uses+1 } });
-  });
+    await tx.giftCode.update({ where: { code: g.code }, data: { uses: g.uses + 1 } });
 
   return Response.json({ ok: true, reward: g.reward });
 }
