@@ -15,15 +15,15 @@ export async function POST(req: Request) {
   const target = await prisma.user.findUnique({ where: { handle } });
   if (!target) return new Response("Target not found", { status: 404 });
 
-  const createdBy = (session as any).uid as string;
+  const reporterId = (session as any).uid as string;
 
   await prisma.report.create({
     data: {
+      reporterId,
       targetUserId: target.id,
       targetHandle: handle,
       reason,
-      createdBy,
-      // status ให้ใช้ค่า default จาก schema (เช่น "pending")
+      // status ใช้ default จาก schema ("pending")
     },
   });
 
