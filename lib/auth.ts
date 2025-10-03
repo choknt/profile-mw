@@ -8,42 +8,38 @@ export const authOptions: NextAuthOptions = {
   providers: [
     Credentials({
       name: "Credentials",
-      credentials: {
-        email: { label: "Email", type: "text" },
-        password: { label: "Password", type: "password" },
-      },
+      credentials: { email: {}, password: {} },
       async authorize(credentials) {
         const email = credentials?.email?.toLowerCase().trim();
         const password = credentials?.password || "";
         if (!email || !password) return null;
-
         const user = await prisma.user.findUnique({ where: { email } });
         if (!user || !user.passwordHash) return null;
-
         const ok = await bcrypt.compare(password, user.passwordHash);
         if (!ok) return null;
-
-        return {
-          id: user.id,
-          email: user.email ?? undefined,
-          name: user.displayName || user.handle,
-        };
+        return { id: user.id, email: user.email!, name: user.displayName || user.handle };
       },
     }),
   ],
-  pages: { signIn: "/login" },
+  pages: {
+    signIn: "/login",
+  },
   callbacks: {
-    // ให้ token เก็บ uid (ไม่จำเป็นมาก แต่เผื่อโค้ดเก่าอ้าง .uid)
-    async jwt({ token, user }) {
-      if (user) token.uid = (user as any).id;
-      return token;
-    },
-    // ให้ session.user.id ใช้งานได้แน่นอน
     async session({ session, token }) {
       if (token?.sub) (session.user as any).id = token.sub;
-      // เผื่อโค้ดบางที่ยังเรียก session.uid
-      if (token?.uid) (session as any).uid = token.uid;
       return session;
+    },
+    // <— ตัวนี้สำคัญ: ถ้าไม่มี callbackUrl ให้ส่งไป /me เสมอ
+    async redirect({ url, baseUrl }) {
+      try {
+        // อนุญาต path ภายใน
+        if (url.startsWith("/")) return `${baseUrl}${url}`;
+        // อนุญาตเฉพาะโดเมนเดียวกัน
+        const u = new URL(url, baseUrl);
+        if (u.origin === baseUrl) return u.toString();
+      } catch {}
+      // fallback
+      return `${baseUrl}/me`;
     },
   },
 };
