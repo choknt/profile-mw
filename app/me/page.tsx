@@ -5,11 +5,23 @@ import { prisma } from "@/lib/prisma";
 
 export default async function MePage() {
   const session = await getServerSession(authOptions);
-  if (!session) redirect("/login");
+  if (!session) {
+    redirect("/login");
+  }
 
-  const me = await prisma.user.findUnique({ where: { id: (session.user as any).id } });
-  if (!me) redirect("/login");
+  const userId = (session.user as any)?.id as string | undefined;
+  if (!userId) {
+    redirect("/login");
+  }
 
-  // ตอนนี้เป็นแบบนี้:
-  redirect(`/${me.handle}`);
+  const me = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { handle: true },
+  });
+
+  if (!me?.handle) {
+    redirect("/create"); // กรณีบัญชีเพิ่งสมัครแล้วยังไม่มี handle
+  }
+
+  redirect(`/${me.handle}/edit`);
 }
