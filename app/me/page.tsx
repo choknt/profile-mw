@@ -1,21 +1,25 @@
-import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { redirect } from "next/navigation";
 
-export default async function MeRedirectPage() {
+export default async function MePage() {
+  // ถ้ายังไม่ได้ล็อกอิน → ไปหน้า login แล้วกลับมาที่ /me หลังสำเร็จ
   const session = await getServerSession(authOptions);
-  if (!session) redirect("/login?callbackUrl=/me");
+  if (!session) redirect(`/login?callbackUrl=/me`);
 
-  const id = (session.user as any)?.id as string | undefined;
-  const handleFromSession = (session.user as any)?.handle as string | undefined;
+  const uid = (session.user as any)?.id;
+  if (!uid) redirect(`/login?callbackUrl=/me`);
 
-  if (handleFromSession) redirect(`/${handleFromSession}/edit`);
+  // หา handle ของผู้ใช้ปัจจุบัน
+  const me = await prisma.user.findUnique({
+    where: { id: uid },
+    select: { handle: true },
+  });
 
-  if (id) {
-    const u = await prisma.user.findUnique({ where: { id }, select: { handle: true } });
-    if (u?.handle) redirect(`/${u.handle}/edit`);
-  }
+  // ถ้ายังไม่เคยสร้างโปรไฟล์ → ไปหน้า Create profile
+  if (!me || !me.handle) redirect("/create");
 
-  redirect("/login?callbackUrl=/me");
+  // พร้อมแล้ว → ส่งไปหน้าแก้ไขโปรไฟล์
+  redirect(`/${me.handle}/edit`);
 }
